@@ -21,11 +21,11 @@ function connectToDatabase() {
 }
 
 /**
- * Получить список доступных языков программирования из таблицы language
+ * Получить список доступных языков программирования из таблицы programming_languages
  */
 function getLanguageList() {
     $pdo = connectToDatabase();
-    $stmt = $pdo->query("SELECT id, name FROM language ORDER BY name");
+    $stmt = $pdo->query("SELECT id, name FROM programming_languages ORDER BY name");
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -43,7 +43,7 @@ $formInput = [
     'email'     => '',
     'birth_date'=> '',
     'gender'    => '',
-    'biography' => '',
+    'bio'       => '',      // в БД поле называется bio
     'contract_agreed' => false,
     'languages' => []
 ];
@@ -59,7 +59,7 @@ $fieldExamples = [
     'birth_date'=> 'Выберите дату',
     'gender'    => 'Выберите вариант',
     'languages' => 'Выберите хотя бы один язык',
-    'biography' => 'До 10000 символов',
+    'bio'       => 'До 10000 символов',
     'contract_agreed' => 'Требуется подтверждение'
 ];
 
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formInput['email']       = trim($_POST['email'] ?? '');
     $formInput['birth_date']  = trim($_POST['birth_date'] ?? '');
     $formInput['gender']      = $_POST['gender'] ?? '';
-    $formInput['biography']   = trim($_POST['biography'] ?? '');
+    $formInput['bio']         = trim($_POST['bio'] ?? '');
     $formInput['contract_agreed'] = isset($_POST['contract_agreed']);
     $formInput['languages']   = $_POST['languages'] ?? [];
 
@@ -142,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Биография
-    if (strlen($formInput['biography']) > 10000) {
-        $errorList['biography'] = 'Текст слишком длинный (максимум 10000 символов).';
+    if (strlen($formInput['bio']) > 10000) {
+        $errorList['bio'] = 'Текст слишком длинный (максимум 10000 символов).';
     }
 
     // Чекбокс согласия
@@ -157,10 +157,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = connectToDatabase();
             $pdo->beginTransaction();
 
-            // Вставка основной записи
+            // Вставка основной записи в таблицу applications
             $insertStmt = $pdo->prepare("
-                INSERT INTO application 
-                (full_name, phone, email, birth_date, gender, biography, contract_accepted)
+                INSERT INTO applications 
+                (full_name, phone, email, birth_date, gender, bio, contract_agreed)
                 VALUES (:fn, :ph, :em, :bd, :gen, :bio, :ca)
             ");
             $insertStmt->execute([
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':em'  => $formInput['email'],
                 ':bd'  => $formInput['birth_date'],
                 ':gen' => $formInput['gender'],
-                ':bio' => $formInput['biography'],
+                ':bio' => $formInput['bio'],
                 ':ca'  => $formInput['contract_agreed'] ? 1 : 0
             ]);
             $applicationId = $pdo->lastInsertId();
@@ -181,9 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $languageMap[$lang['name']] = $lang['id'];
             }
 
-            // Вставка связей в таблицу application_language
+            // Вставка связей в таблицу application_languages
             $linkStmt = $pdo->prepare("
-                INSERT INTO application_language (application_id, language_id) 
+                INSERT INTO application_languages (application_id, language_id) 
                 VALUES (?, ?)
             ");
             foreach ($formInput['languages'] as $langName) {
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email'     => '',
                 'birth_date'=> '',
                 'gender'    => '',
-                'biography' => '',
+                'bio'       => '',
                 'contract_agreed' => false,
                 'languages' => []
             ];
@@ -216,12 +216,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Загружаем список языков для отображения в select
 $languageOptions = getLanguageList();
 if (empty($languageOptions)) {
-    // Если таблица language пуста, используем белый список в качестве fallback
+    // Если таблица programming_languages пуста, используем белый список в качестве fallback
     $languageOptions = array_map(function($name) {
         return ['id' => $name, 'name' => $name];
     }, $whitelistLanguages);
 }
 
 // Подключаем шаблон формы
-require 'anketa.php';
+require 'form.php';
 ?>
