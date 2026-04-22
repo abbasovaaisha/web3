@@ -1,6 +1,6 @@
 <?php
 /**
- * Подключение к базе данных (статическое кеширование соединения)
+ * Подключение к базе данных
  */
 function connectToDatabase() {
     static $db = null;
@@ -14,14 +14,14 @@ function connectToDatabase() {
             $db = new PDO($dsn, $user, $pass);
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            exit('Не удалось подключиться к БД: ' . $e->getMessage());
+            exit('Ошибка подключения к БД: ' . $e->getMessage());
         }
     }
     return $db;
 }
 
 /**
- * Получить список доступных языков программирования из таблицы programming_languages
+ * Получить список языков из таблицы programming_languages
  */
 function getLanguageList() {
     $pdo = connectToDatabase();
@@ -29,29 +29,29 @@ function getLanguageList() {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Белые списки для проверки корректности выбора
-$whitelistLanguages = [
+// Белые списки для валидации
+$allowedLanguages = [
     'Pascal', 'C', 'C++', 'JavaScript', 'PHP', 'Python',
     'Java', 'Haskell', 'Clojure', 'Prolog', 'Scala', 'Go'
 ];
-$whitelistGenders = ['male', 'female'];
+$allowedGenders = ['male', 'female'];
 
-// Инициализация массива с данными формы (будет заполняться из $_POST)
+// Инициализация данных формы
 $formInput = [
     'full_name' => '',
     'phone'     => '',
     'email'     => '',
     'birth_date'=> '',
     'gender'    => '',
-    'bio'       => '',      // в БД поле называется bio
+    'bio'       => '',
     'contract_agreed' => false,
     'languages' => []
 ];
 
-$errorList = [];           // Ошибки валидации по полям
-$successNotification = ''; // Сообщение об успешной записи
+$errorList = [];
+$successMessage = '';
 
-// Подсказки с примерами правильного заполнения (показываются рядом с полем)
+// Примеры правильного заполнения
 $fieldExamples = [
     'full_name' => 'Пример: Иванов Иван Иванович',
     'phone'     => 'Пример: +7 999 123-45-67',
@@ -63,9 +63,9 @@ $fieldExamples = [
     'contract_agreed' => 'Требуется подтверждение'
 ];
 
-// Если пришёл POST-запрос — обрабатываем форму
+// Обработка отправки формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Загружаем переданные значения
+    // Загрузка данных из POST
     $formInput['full_name']   = trim($_POST['full_name'] ?? '');
     $formInput['phone']       = trim($_POST['phone'] ?? '');
     $formInput['email']       = trim($_POST['email'] ?? '');
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formInput['contract_agreed'] = isset($_POST['contract_agreed']);
     $formInput['languages']   = $_POST['languages'] ?? [];
 
-    // ---------- ВАЛИДАЦИЯ ----------
+    // --- Валидация ---
     // ФИО
     if ($formInput['full_name'] === '') {
         $errorList['full_name'] = 'Поле обязательно для заполнения.';
@@ -84,14 +84,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($formInput['full_name']) > 150) {
         $errorList['full_name'] = 'Максимальная длина — 150 символов.';
     } else {
-        // Подсчёт буквенных символов (без использования mbstring)
         preg_match_all('/[a-zA-Zа-яА-ЯёЁ]/u', $formInput['full_name'], $letters);
         if (count($letters[0]) < 2) {
             $errorList['full_name'] = 'В имени должно быть не менее двух букв.';
         }
     }
 
-    // Телефон (ровно 11 цифр, первая — 7)
+    // Телефон (ровно 11 цифр, первая 7)
     if ($formInput['phone'] === '') {
         $errorList['phone'] = 'Поле обязательно для заполнения.';
     } else {
@@ -125,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Пол
     if ($formInput['gender'] === '') {
         $errorList['gender'] = 'Выберите пол.';
-    } elseif (!in_array($formInput['gender'], $whitelistGenders)) {
+    } elseif (!in_array($formInput['gender'], $allowedGenders)) {
         $errorList['gender'] = 'Недопустимое значение.';
     }
 
@@ -134,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorList['languages'] = 'Необходимо выбрать хотя бы один язык.';
     } else {
         foreach ($formInput['languages'] as $lang) {
-            if (!in_array($lang, $whitelistLanguages)) {
+            if (!in_array($lang, $allowedLanguages)) {
                 $errorList['languages'] = 'Выбран недопустимый язык.';
                 break;
             }
@@ -146,24 +145,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorList['bio'] = 'Текст слишком длинный (максимум 10000 символов).';
     }
 
-    // Чекбокс согласия
+    // Чекбокс
     if (!$formInput['contract_agreed']) {
         $errorList['contract_agreed'] = 'Необходимо подтвердить ознакомление с контрактом.';
     }
 
-    // Если ошибок нет — сохраняем данные в БД
+    // Сохранение в БД, если ошибок нет
     if (empty($errorList)) {
         try {
             $pdo = connectToDatabase();
             $pdo->beginTransaction();
 
-            // Вставка основной записи в таблицу applications
-            $insertStmt = $pdo->prepare("
+            $stmt = $pdo->prepare("
                 INSERT INTO applications 
                 (full_name, phone, email, birth_date, gender, bio, contract_agreed)
                 VALUES (:fn, :ph, :em, :bd, :gen, :bio, :ca)
             ");
-            $insertStmt->execute([
+            $stmt->execute([
                 ':fn'  => $formInput['full_name'],
                 ':ph'  => $formInput['phone'],
                 ':em'  => $formInput['email'],
@@ -174,14 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $applicationId = $pdo->lastInsertId();
 
-            // Получаем массив соответствия "название языка" => "id"
+            // Получаем соответствие название языка → id
             $languageMap = [];
             $langRecords = getLanguageList();
             foreach ($langRecords as $lang) {
                 $languageMap[$lang['name']] = $lang['id'];
             }
 
-            // Вставка связей в таблицу application_languages
+            // Вставка связей
             $linkStmt = $pdo->prepare("
                 INSERT INTO application_languages (application_id, language_id) 
                 VALUES (?, ?)
@@ -193,9 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $pdo->commit();
-            $successNotification = 'Данные успешно сохранены!';
+            $successMessage = 'Данные успешно сохранены!';
 
-            // Очищаем форму после успешной отправки
+            // Очистка формы
             $formInput = [
                 'full_name' => '',
                 'phone'     => '',
@@ -213,15 +211,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Загружаем список языков для отображения в select
+// Получаем список языков для формы
 $languageOptions = getLanguageList();
 if (empty($languageOptions)) {
-    // Если таблица programming_languages пуста, используем белый список в качестве fallback
     $languageOptions = array_map(function($name) {
         return ['id' => $name, 'name' => $name];
-    }, $whitelistLanguages);
+    }, $allowedLanguages);
 }
 
-// Подключаем шаблон формы
+// Подключаем шаблон формы (переименован в anketa.php)
 require 'anketa.php';
 ?>

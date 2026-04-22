@@ -6,7 +6,6 @@
     <title>Анкета – Задание 3</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Дополнительные стили для навигации */
         .nav-links {
             margin-top: 30px;
             text-align: center;
@@ -32,8 +31,8 @@
     <div class="container">
         <h1>Заполните анкету</h1>
 
-        <?php if ($successNotification !== ''): ?>
-            <div class="alert success">✅ <?= htmlspecialchars($successNotification) ?></div>
+        <?php if ($successMessage !== ''): ?>
+            <div class="alert success">✅ <?= htmlspecialchars($successMessage) ?></div>
         <?php endif; ?>
 
         <?php if (isset($errorList['database'])): ?>
@@ -65,7 +64,7 @@
                 <?php endif; ?>
             </div>
 
-            <!-- E-mail -->
+            <!-- Email -->
             <div class="form-group <?= isset($errorList['email']) ? 'has-error' : '' ?>">
                 <label for="email">E-mail *</label>
                 <input type="email" id="email" name="email" 
@@ -103,7 +102,7 @@
                 <?php endif; ?>
             </div>
 
-            <!-- Любимые языки программирования -->
+            <!-- Языки -->
             <div class="form-group <?= isset($errorList['languages']) ? 'has-error' : '' ?>">
                 <label for="languages">Любимые языки программирования *</label>
                 <select id="languages" name="languages[]" multiple size="6" required>
@@ -121,15 +120,15 @@
             </div>
 
             <!-- Биография -->
-            <div class="form-group <?= isset($errorList['biography']) ? 'has-error' : '' ?>">
-                <label for="biography">Биография</label>
-                <textarea id="biography" name="biography" rows="5"><?= htmlspecialchars($formInput['biography']) ?></textarea>
-                <?php if (isset($errorList['biography'])): ?>
-                    <div class="field-error">⚠️ <?= htmlspecialchars($errorList['biography']) ?> <?= $fieldExamples['biography'] ?></div>
+            <div class="form-group <?= isset($errorList['bio']) ? 'has-error' : '' ?>">
+                <label for="bio">Биография</label>
+                <textarea id="bio" name="bio" rows="5"><?= htmlspecialchars($formInput['bio']) ?></textarea>
+                <?php if (isset($errorList['bio'])): ?>
+                    <div class="field-error">⚠️ <?= htmlspecialchars($errorList['bio']) ?> <?= $fieldExamples['bio'] ?></div>
                 <?php endif; ?>
             </div>
 
-            <!-- Чекбокс согласия -->
+            <!-- Чекбокс -->
             <div class="form-group checkbox-group <?= isset($errorList['contract_agreed']) ? 'has-error' : '' ?>">
                 <label class="checkbox-label">
                     <input type="checkbox" name="contract_agreed" <?= $formInput['contract_agreed'] ? 'checked' : '' ?> required>

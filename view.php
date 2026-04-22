@@ -7,7 +7,6 @@ try {
     $pdo = new PDO("mysql:host=localhost;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Запрос с группировкой языков через запятую
     $stmt = $pdo->query("
         SELECT 
             a.id,
@@ -35,31 +34,13 @@ try {
 <head>
     <meta charset="UTF-8">
     <title>Сохранённые анкеты</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-        }
         .table-wrapper {
             overflow-x: auto;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-top: 20px;
         }
         table {
             border-collapse: collapse;
@@ -103,14 +84,14 @@ try {
             transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
         }
-        .gender-badge {
-            text-transform: capitalize;
-        }
         .empty-message {
             text-align: center;
             padding: 40px;
             color: #666;
             font-size: 18px;
+        }
+        .container {
+            max-width: 1400px;
         }
     </style>
 </head>
@@ -147,9 +128,7 @@ try {
                             <td><?= htmlspecialchars($app['phone']) ?></td>
                             <td><?= htmlspecialchars($app['email']) ?></td>
                             <td><?= htmlspecialchars($app['birth_date']) ?></td>
-                            <td class="gender-badge">
-                                <?= $app['gender'] === 'male' ? 'Мужской' : 'Женский' ?>
-                            </td>
+                            <td><?= $app['gender'] === 'male' ? 'Мужской' : 'Женский' ?></td>
                             <td class="bio-cell" title="<?= htmlspecialchars($app['bio']) ?>">
                                 <?= nl2br(htmlspecialchars($app['bio'] ?: '—')) ?>
                             </td>
