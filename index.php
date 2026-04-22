@@ -223,5 +223,5 @@ if (empty($languageOptions)) {
 }
 
 // Подключаем шаблон формы
-require 'form.php';
+require 'anketa.php';
 ?>
