@@ -1,5 +1,5 @@
 <?php
-// Подключение к базе данных
+// Подключение к БД для получения списка языков
 $host = 'localhost';
 $dbname = 'u82462';
 $username = 'u82462';
@@ -9,16 +9,15 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Получаем список языков для формы
     $stmt = $pdo->query("SELECT id, name FROM programming_languages ORDER BY name");
     $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die("Ошибка подключения к базе данных: " . $e->getMessage());
 }
 
-// Функция для сохранения значений полей после отправки формы с ошибкой
-function old($key) {
-    return isset($_POST[$key]) ? htmlspecialchars($_POST[$key]) : '';
+$successMessage = '';
+if (isset($_GET['success'])) {
+    $successMessage = '<div class="alert success">✅ Данные успешно сохранены!</div>';
 }
 ?>
 <!DOCTYPE html>
@@ -32,47 +31,46 @@ function old($key) {
 <body>
     <div class="container">
         <h1>Заполните анкету</h1>
+        <?php echo $successMessage; ?>
         
-        <?php if (isset($_GET['success'])): ?>
-            <div class="alert success">✅ Данные успешно сохранены!</div>
-        <?php endif; ?>
-        
-        <?php if (isset($_GET['error'])): ?>
-            <div class="alert error">❌ <?php echo htmlspecialchars($_GET['error']); ?></div>
-        <?php endif; ?>
-
+        <!-- Чистая форма для первого входа -->
         <form action="process.php" method="post" class="application-form">
+            <input type="hidden" name="submitted" value="1">
+            
             <div class="form-group">
                 <label for="full_name">ФИО *</label>
-                <input type="text" id="full_name" name="full_name" value="<?php echo old('full_name'); ?>" maxlength="150" required>
+                <input type="text" id="full_name" name="full_name" maxlength="150" required>
+                <div class="field-hint">Например: Иванов Иван Иванович</div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
                     <label for="phone">Телефон *</label>
-                    <input type="tel" id="phone" name="phone" value="<?php echo old('phone'); ?>" required>
+                    <input type="tel" id="phone" name="phone" required>
+                    <div class="field-hint">Например: +7 (999) 123-45-67</div>
                 </div>
                 
                 <div class="form-group">
                     <label for="email">E-mail *</label>
-                    <input type="email" id="email" name="email" value="<?php echo old('email'); ?>" required>
+                    <input type="email" id="email" name="email" required>
+                    <div class="field-hint">Например: ivanov@mail.ru</div>
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
                     <label for="birth_date">Дата рождения *</label>
-                    <input type="date" id="birth_date" name="birth_date" value="<?php echo old('birth_date'); ?>" required>
+                    <input type="date" id="birth_date" name="birth_date" required>
                 </div>
                 
                 <div class="form-group">
                     <label>Пол *</label>
                     <div class="radio-group">
                         <label class="radio-label">
-                            <input type="radio" name="gender" value="male" <?php echo old('gender') === 'male' ? 'checked' : ''; ?> required> Мужской
+                            <input type="radio" name="gender" value="male" required> Мужской
                         </label>
                         <label class="radio-label">
-                            <input type="radio" name="gender" value="female" <?php echo old('gender') === 'female' ? 'checked' : ''; ?> required> Женский
+                            <input type="radio" name="gender" value="female" required> Женский
                         </label>
                     </div>
                 </div>
@@ -82,8 +80,7 @@ function old($key) {
                 <label for="languages">Любимый язык программирования *</label>
                 <select id="languages" name="languages[]" multiple size="6" required>
                     <?php foreach ($languages as $language): ?>
-                        <option value="<?php echo $language['id']; ?>" 
-                            <?php echo (isset($_POST['languages']) && in_array($language['id'], $_POST['languages'])) ? 'selected' : ''; ?>>
+                        <option value="<?php echo $language['id']; ?>">
                             <?php echo htmlspecialchars($language['name']); ?>
                         </option>
                     <?php endforeach; ?>
@@ -93,12 +90,12 @@ function old($key) {
 
             <div class="form-group">
                 <label for="bio">Биография</label>
-                <textarea id="bio" name="bio" rows="5"><?php echo old('bio'); ?></textarea>
+                <textarea id="bio" name="bio" rows="5"></textarea>
             </div>
 
             <div class="form-group checkbox-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" name="contract_agreed" <?php echo isset($_POST['contract_agreed']) ? 'checked' : ''; ?> required>
+                    <input type="checkbox" name="contract_agreed" required>
                     С контрактом ознакомлен(а) *
                 </label>
             </div>

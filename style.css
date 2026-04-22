@@ -145,6 +145,12 @@ small {
     border: 1px solid #f5c6cb;
 }
 
+.field-hint {
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
 @media (max-width: 600px) {
     .container {
         padding: 25px;
