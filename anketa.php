@@ -144,6 +144,7 @@
 
         <div class="nav-links">
             <a href="view.php">📋 Просмотр сохранённых анкет</a>
+            <a href="podg.html">📋 Страница подготовки </a>
         </div>
     </div>
 </body>
